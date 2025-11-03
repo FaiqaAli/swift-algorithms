@@ -461,40 +461,55 @@ extension LazySequenceProtocol where Self: Collection, Elements: Collection {
 //===----------------------------------------------------------------------===//
 
 extension Collection {
-  /// Returns a collection of subsequences of this collection, chunked by the
-  /// given predicate.
-  ///
-  /// - Parameter belongInSameGroup: A closure that takes two adjacent elements
-  ///   of the collection and returns whether or not they belong in the same
-  ///   group.
-  /// - Returns: A collection of subsequences, with every pairwise group of
-  ///   elements in each chunk returning `true` for `belongInSameGroup`.
-  ///
-  /// - Complexity: O(*n*), where *n* is the length of this collection.
-  @inlinable
-  public func chunked(
-    by belongInSameGroup: (Element, Element) throws -> Bool
-  ) rethrows -> [SubSequence] {
-    guard !isEmpty else { return [] }
-    var result: [SubSequence] = []
-
-    var start = startIndex
-    var current = self[start]
-
-    for (index, element) in indexed().dropFirst() {
-      if try !belongInSameGroup(current, element) {
-        result.append(self[start..<index])
-        start = index
-      }
-      current = element
+    /// Returns a collection of subsequences of this collection, chunked by the
+    /// given predicate.
+    ///
+    /// - Parameter belongInSameGroup: A closure that takes two adjacent elements
+    ///   of the collection and returns whether or not they belong in the same
+    ///   group.
+    /// - Returns: A collection of subsequences, with every pairwise group of
+    ///   elements in each chunk returning `true` for `belongInSameGroup`.
+    ///
+    /// - Complexity: O(*n*), where *n* is the length of this collection.
+    @inlinable
+    public func chunked(
+        by belongInSameGroup: (Element, Element) throws -> Bool
+    ) rethrows -> [SubSequence] {
+        guard !isEmpty else { return [] }
+        var result: [SubSequence] = []
+        
+        var start = startIndex
+        var current = self[start]
+        
+        for (index, element) in indexed().dropFirst() {
+            if try !belongInSameGroup(current, element) {
+                result.append(self[start..<index])
+                start = index
+            }
+            current = element
+        }
+        
+        if start != endIndex {
+            result.append(self[start...])
+        }
+        
+        return result
+    }
+    
+    @inlinable
+    public func chunkedBySize(_ size: Int) -> [SubSequence] {
+        guard size > 0 else { return [] }
+        var result: [SubSequence] = []
+        var startIndex = self.startIndex
+        
+        while startIndex < self.endIndex {
+            let endIndex = self.index(startIndex, offsetBy: size, limitedBy: self.endIndex) ?? self.endIndex
+            result.append(self[startIndex..<endIndex])
+            startIndex = endIndex
+        }
+        return result
     }
 
-    if start != endIndex {
-      result.append(self[start...])
-    }
-
-    return result
-  }
 
   /// Returns a collection of subsequences of this collection, chunked by
   /// grouping elements that project to equal values.
